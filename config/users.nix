@@ -1,0 +1,5 @@
+{ ... }:
+
+{
+  personal.user.enable = true;
+}
