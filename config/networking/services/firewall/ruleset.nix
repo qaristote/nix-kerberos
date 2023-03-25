@@ -41,6 +41,9 @@ let
         th dport 53            \
         accept comment dns
     '';
+    igmp = ''
+      ip protocol igmp accept comment "igmp"
+    '';
     # https://userbase.kde.org/KDEConnect#I_have_two_devices_running_KDE_Connect_on_the_same_network,_but_they_can't_see_each_other
     kdeconnect = ''
       ip protocol { tcp, udp } \
@@ -50,10 +53,27 @@ let
     ping = ''
       icmp type echo-request limit rate 5/second accept
     '';
+    # https://www.packetmischief.ca/2021/08/04/operating-sonos-speakers-in-a-multi-vlan-network/
+    ssdp = ''
+      ip protocol udp \
+        ip daddr { 239.255.255.250, 255.255.255.255 } \
+        udp dport 1900 \
+        accept comment ssdp
+    '';
     ssh = ''
       ip protocol tcp \
         tcp dport 22  \
         accept comment ssh
+    '';
+    # https://support.sonos.com/en-us/article/configure-your-firewall-to-work-with-sonos
+    # https://en.community.sonos.com/advanced-setups-229000/changed-udp-tcp-ports-for-sonos-app-needed-after-update-to-s2-6842454
+    sonos-app = ''
+      ip protocol tcp \
+        tcp dport { 1400, 1443, 3400, 3401, 3500, 4444 } \
+        accept comment "sonos: app control"
+      ip protocol udp \
+        udp dport { 1901, 6969, 32412, 32414 } \
+        accept comment "sonos: app control"
     '';
     #   # https://docs.syncthing.net/users/firewall.html
     syncthing = ''
@@ -76,22 +96,27 @@ in {
       };
       chains = {
         wan_in.rules = with rulesCommon; dns + dhcp + ssh;
-        iot_in.rules = with rulesCommon; dns + dhcp;
+        iot_in.rules = with rulesCommon; dns + dhcp + igmp;
+        lan_in.rules = rulesCommon.igmp;
         input = makeBaseChain "filter" "input" {
           rules = with rulesCommon;
             conntrack + ping + ''
               meta iifname vmap { lo               : accept      \
-                                , ${nets.lan.interface} : drop        \
+                                , ${nets.lan.interface} : goto lan_in \
                                 , ${nets.wan.interface} : goto wan_in \
                                 , ${nets.iot.interface} : goto iot_in }
             '';
         };
+        lan_wan.rules = with rulesCommon; sonos-app;
         forward = makeBaseChain "filter" "forward" {
           rules = with rulesCommon;
             ''
               ip protocol { udp, tcp } flow add @default
             '' + conntrack + ''
               meta oifname ${nets.lan.interface} accept
+              meta iifname ${nets.lan.interface} \
+                meta oifname ${nets.wan.interface} \
+                goto lan_wan
             '';
         };
       };
@@ -122,6 +147,11 @@ in {
   bridge = {
     filter = makeTable {
       chains = {
+        iot_wan.rules = rulesCommon.sonos-app;
+        wan_iot.rules = with rulesCommon; igmp + ssdp + sonos-app + ''
+          ip protocol udp udp sport 5353 udp dport 5353 accept comment mdns
+          log level debug prefix waniot
+        '';
         wan_wan.rules = with rulesCommon; syncthing + kdeconnect;
         forward = makeBaseChain "filter" "forward" {
           rules = with rulesCommon;
@@ -129,7 +159,9 @@ in {
               ether type vmap { ip6 : drop, arp : accept }
             '' + ping + ''
               meta ibrname . meta obrname vmap \
-                { ${nets.wan.interface} . ${nets.wan.interface} : goto wan_wan }
+                { ${nets.wan.interface} . ${nets.wan.interface} : goto wan_wan \
+                , ${nets.wan.interface} . ${nets.iot.interface} : goto wan_iot \
+                , ${nets.iot.interface} . ${nets.iot.interface} : goto wan_iot }
             '';
         };
       };
@@ -137,21 +169,7 @@ in {
   };
 }
 
-# chain sonos_app {
-#   # https://support.sonos.com/en-us/article/configure-your-firewall-to-work-with-sonos
-#   # https://en.community.sonos.com/advanced-setups-229000/changed-udp-tcp-ports-for-sonos-app-needed-after-update-to-s2-6842454
-#   ip protocol tcp \
-#     tcp sport { 1400, 3400, 3401, 3500 } \
-#     tcp dport { 1400, 3400, 3401, 3500 } \
-#     accept comment "sonos: app control"
-#     ip protocol udp \
-#     udp sport 1900-1901 \
-#     udp dport 1900-1901 \
-#     accept comment "sonos: app control"
-# }
 # chain sonos {
-#   # https://support.sonos.com/en-us/article/configure-your-firewall-to-work-with-sonos
-#   # https://en.community.sonos.com/advanced-setups-229000/changed-udp-tcp-ports-for-sonos-app-needed-after-update-to-s2-6842454
 #   ip protocol tcp \
 #     tcp sport 4444 \
 #     tcp dport 4444 \
