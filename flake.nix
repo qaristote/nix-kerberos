@@ -14,9 +14,11 @@
     in {
       kerberos = nixpkgs.lib.nixosSystem {
         inherit system;
-        modules = commonModules
-          ++ [ ./config ];
-        specialArgs = { inherit nixos-hardware; };
+        modules = commonModules ++ [ ./config ];
+        specialArgs = {
+          inherit nixos-hardware;
+          secrets = import ./secrets.nix;
+        };
       };
     };
   };
