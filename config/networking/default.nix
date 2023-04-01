@@ -51,12 +51,14 @@ in {
       dhcpcd.enable = false;
       interfaces = {
         "${cfg.interfaces.eth}" = {
+          useDHCP = false;
           ipv4.addresses = [{
             address = "${cfg.subnets.public}.2";
             prefixLength = 24;
           }];
         };
         "${cfg.interfaces.wlp5ghz}" = {
+          useDHCP = false;
           ipv4.addresses = [{
             address = "${cfg.subnets.private}.1";
             prefixLength = 24;
