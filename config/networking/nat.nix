@@ -8,12 +8,12 @@ in {
 
   networking = {
     nat = {
-        enable = true;
-        externalInterface = cfg.interfaces.eth;
-        internalInterfaces = [
-          # cfg.interfaces.wlp2ghz
-          cfg.interfaces.wlp5ghz
-        ];
+      enable = true;
+      externalInterface = cfg.interfaces.eth;
+      internalInterfaces = [
+        cfg.interfaces.wlp2ghz
+        cfg.interfaces.wlp5ghz
+      ];
     };
 
     firewall.enable = false;

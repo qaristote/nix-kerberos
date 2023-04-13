@@ -36,6 +36,7 @@ in {
       subnets = {
         public = "192.168.1";
         private = "192.168.2";
+        iot = "192.168.3";
       };
     };
 
@@ -61,6 +62,13 @@ in {
           useDHCP = false;
           ipv4.addresses = [{
             address = "${cfg.subnets.private}.1";
+            prefixLength = 24;
+          }];
+        };
+        "${cfg.interfaces.wlp2ghz}" = {
+          useDHCP = false;
+          ipv4.addresses = [{
+            address = "${cfg.subnets.iot}.1";
             prefixLength = 24;
           }];
         };
