@@ -1,18 +1,18 @@
 { config, ... }:
 
-let cfg = config.personal.networking;
+let nets = config.personal.networking.networks;
 in {
   services.unbound = {
     enable = true;
     settings = {
       server = {
         interface =
-          [ "127.0.0.1" "${cfg.subnets.private}.1" "${cfg.subnets.iot}.1" ];
+          [ "127.0.0.1" "${nets.wan.subnet}.1" "${nets.iot.subnet}.1" ];
         access-control = [
           "0.0.0.0/0 refuse"
           "127.0.0.0/8 allow"
-          "${cfg.subnets.private}.0/24 allow"
-          "${cfg.subnets.iot}.0/24 allow"
+          "${nets.wan.subnet}.0/24 allow"
+          "${nets.iot.subnet}.0/24 allow"
         ];
       };
     };

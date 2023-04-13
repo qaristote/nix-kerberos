@@ -2,25 +2,37 @@
 # https://blog.fraggod.net/2017/04/27/wifi-hostapd-configuration-for-80211ac-networks.html
 { config, lib, pkgs, secrets, ... }:
 
-let
-  cfg = config.personal.networking;
+let cfg = config.personal.networking;
 in {
   imports = [ ./nat.nix ./services ];
 
   options.personal.networking = {
     interfaces = lib.mkOption {
-      type = with lib.types; attrsOf str;
-      description = "Reusable names for network devices.";
-      example = {
-        eth = "enp4s0";
-      };
-    };
-    subnets = lib.mkOption {
-      type = with lib.types; attrsOf str;
-      description = "Reusable names for subnets.";
-      example = {
-        private = "192.168.1";
-      };
+      type = with lib.types;
+        attrsOf (submodule {
+          interface = lib.mkOption {
+            type = lib.types.str;
+            description = "Name of the network interface.";
+            example = "enp4s0";
+          };
+          subnet = lib.mkOption {
+            type = lib.types.str;
+            description = "IPv4 subnet of the network.";
+            example = "192.168.1";
+          };
+          machines = lib.mkOption {
+            type = with lib.types;
+              attrsOf (submodule {
+                address = lib.mkOption {
+                  type = lib.types.str;
+                  description = "IP address of this machine.";
+                  example = "192.168.1.1";
+                };
+              });
+            description = "Some machines connected to this network.";
+          };
+        });
+      description = "Networks this device belongs to.";
     };
   };
 
@@ -28,15 +40,25 @@ in {
     personal.networking = {
       enable = true;
       ssh.enable = true;
-      interfaces = {
-        eth = "enp4s0";
-        wlp2ghz = "wlp5s0";
-        wlp5ghz = "wlp1s0";
-      };
-      subnets = {
-        public = "192.168.1";
-        private = "192.168.2";
-        iot = "192.168.3";
+      networks = {
+        lan = {
+          interface = "enp4s0";
+          subnet = "192.168.1";
+          machines = {
+            livebox = { address = "192.168.1.1"; };
+            self = { address = "192.168.1.2"; };
+          };
+        };
+        wan = {
+          interface = "wlp1s0";
+          subnet = "192.168.2";
+          machines = { self.address = "192.168.2.1"; };
+        };
+        iot = {
+          interface = "wlp5s0";
+          subnet = "192.168.3";
+          machines = { self.address = "192.168.3.1"; };
+        };
       };
     };
 
@@ -44,35 +66,21 @@ in {
       hostName = "kerberos";
       domain = "local";
 
-      defaultGateway = {
-        address = "${cfg.subnets.public}.1";
-        interface = cfg.interfaces.eth;
+      defaultGateway = with cfg.networks.lan; {
+        inherit interface;
+        inherit (machines.livebox) address;
       };
 
       dhcpcd.enable = false;
-      interfaces = {
-        "${cfg.interfaces.eth}" = {
+      interfaces = lib.concatMapAttrs (name: value: {
+        "${value.interface}" = {
           useDHCP = false;
-          ipv4.addresses = [{
-            address = "${cfg.subnets.public}.2";
+          ipv4.address = lib.optional (value.machines ? self) {
+            inherit (value.machines) address;
             prefixLength = 24;
-          }];
+          };
         };
-        "${cfg.interfaces.wlp5ghz}" = {
-          useDHCP = false;
-          ipv4.addresses = [{
-            address = "${cfg.subnets.private}.1";
-            prefixLength = 24;
-          }];
-        };
-        "${cfg.interfaces.wlp2ghz}" = {
-          useDHCP = false;
-          ipv4.addresses = [{
-            address = "${cfg.subnets.iot}.1";
-            prefixLength = 24;
-          }];
-        };
-      };
+      }) cfg.networks;
     };
   };
 }

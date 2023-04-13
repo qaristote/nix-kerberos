@@ -78,9 +78,9 @@ let
       tx_queue_data0_cwmax=7
       tx_queue_data0_burst=1.5
     '' + extraConfig);
-  hostapd2ghzConf = makeHostapdConf {
-    name = "2ghz";
-    interface = config.personal.networking.interfaces.wlp2ghz;
+  hostapdIotConf = makeHostapdConf {
+    name = "iot";
+    interface = config.personal.networking.networks.iot.interface;
     ssid = "Quentinternet of Things";
     hwMode = "g";
     channel = 0;
@@ -91,9 +91,9 @@ let
       ht_capab=[HT40+][SHORT-GI-40][TX-STBC][RX-STBC1][DSSS_CCK-40]
     '';
   };
-  hostapd5ghzConf = makeHostapdConf {
-    name = "5ghz";
-    interface = config.personal.networking.interfaces.wlp5ghz;
+  hostapdWanConf = makeHostapdConf {
+    name = "wan";
+    interface = config.personal.networking.networks.wan.interface;
     ssid = "Quentintranet";
     hwMode = "a";
     channel = 36;
@@ -119,9 +119,9 @@ in {
   };
 
   systemd.services.hostapd = let
-    interfaces = with config.personal.networking.interfaces; [
-      wlp2ghz
-      wlp5ghz
+    interfaces = with config.personal.networking.networks; [
+      wan.interface
+      iot.interface
     ];
     netDevices = builtins.map (interface:
       "sys-subsystem-net-devices-${utils.escapeSystemdPath interface}.device")
@@ -130,7 +130,7 @@ in {
       builtins.map (interface: "network-link-${interface}.service") interfaces;
   in {
     serviceConfig.ExecStart = lib.mkForce
-      "${pkgs.hostapd}/bin/hostapd ${hostapd2ghzConf} ${hostapd5ghzConf}";
+      "${pkgs.hostapd}/bin/hostapd ${hostapdIotConf} ${hostapdWanConf}";
     after = lib.mkForce netDevices;
     bindsTo = lib.mkForce netDevices;
     requiredBy = lib.mkForce networkLinkServices;

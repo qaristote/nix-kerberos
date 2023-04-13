@@ -1,10 +1,10 @@
 {
   wifi = {
-    "2ghz" = {
-      passphrase = builtins.readFile "/etc/hostapd/hostapd.2ghz.pw";
+    iot = {
+      passphrase = builtins.readFile "/etc/hostapd/hostapd.iot.pw";
     };
-    "5ghz" = {
-      passphrase = builtins.readFile "/etc/hostapd/hostapd.5ghz.pw";
+    wan = {
+      passphrase = builtins.readFile "/etc/hostapd/hostapd.wan.pw";
     };
   };
 }
