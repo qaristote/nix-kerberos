@@ -65,6 +65,7 @@ in {
     networking = {
       hostName = "kerberos";
       domain = "local";
+      nameserver = [ cfg.networks.lan.machines.livebox.address ];
 
       defaultGateway = with cfg.networks.lan; {
         inherit interface;
