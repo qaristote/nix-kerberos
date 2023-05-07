@@ -65,7 +65,6 @@ in {
           }
           chain ssh {
             ip protocol tcp \
-              tcp sport 22 \
               tcp dport 22 \
               accept comment "ssh"
           }
