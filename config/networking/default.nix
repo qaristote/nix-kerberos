@@ -4,7 +4,7 @@
 
 let cfg = config.personal.networking;
 in {
-  imports = [ ./nat.nix ./services ];
+  imports = [ ./services ];
 
   options.personal.networking = {
     interfaces = lib.mkOption {
