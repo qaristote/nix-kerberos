@@ -6,7 +6,7 @@ let
       option broadcast-address ${network.subnet}.255;
       option routers ${network.machines.self.address};
       interface ${network.interface};
-      range ${network.subnet}.10 ${network.subnet}.99
+      range ${network.subnet}.10 ${network.subnet}.99;
     }
   '';
 in {

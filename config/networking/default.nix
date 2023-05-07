@@ -7,29 +7,33 @@ in {
   imports = [ ./services ];
 
   options.personal.networking = {
-    interfaces = lib.mkOption {
+    networks = lib.mkOption {
       type = with lib.types;
         attrsOf (submodule {
-          interface = lib.mkOption {
-            type = lib.types.str;
-            description = "Name of the network interface.";
-            example = "enp4s0";
-          };
-          subnet = lib.mkOption {
-            type = lib.types.str;
-            description = "IPv4 subnet of the network.";
-            example = "192.168.1";
-          };
-          machines = lib.mkOption {
-            type = with lib.types;
-              attrsOf (submodule {
-                address = lib.mkOption {
-                  type = lib.types.str;
-                  description = "IP address of this machine.";
-                  example = "192.168.1.1";
-                };
-              });
-            description = "Some machines connected to this network.";
+          options = {
+            interface = lib.mkOption {
+              type = lib.types.str;
+              description = "Name of the network interface.";
+              example = "enp4s0";
+            };
+            subnet = lib.mkOption {
+              type = lib.types.str;
+              description = "IPv4 subnet of the network.";
+              example = "192.168.1";
+            };
+            machines = lib.mkOption {
+              type = with lib.types;
+                attrsOf (submodule {
+                  options = {
+                    address = lib.mkOption {
+                      type = lib.types.str;
+                      description = "IP address of this machine.";
+                      example = "192.168.1.1";
+                    };
+                  };
+                });
+              description = "Some machines connected to this network.";
+            };
           };
         });
       description = "Networks this device belongs to.";
@@ -65,7 +69,7 @@ in {
     networking = {
       hostName = "kerberos";
       domain = "local";
-      nameserver = [ cfg.networks.lan.machines.livebox.address ];
+      nameservers = [ cfg.networks.lan.machines.livebox.address ];
 
       defaultGateway = with cfg.networks.lan; {
         inherit interface;
@@ -76,8 +80,8 @@ in {
       interfaces = lib.concatMapAttrs (name: value: {
         "${value.interface}" = {
           useDHCP = false;
-          ipv4.address = lib.optional (value.machines ? self) {
-            inherit (value.machines) address;
+          ipv4.addresses = lib.optional (value.machines ? self) {
+            inherit (value.machines.self) address;
             prefixLength = 24;
           };
         };
