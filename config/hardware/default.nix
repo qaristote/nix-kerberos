@@ -1,7 +1,8 @@
-{ nixos-hardware, ... }:
+{ nixos-hardware, modulesPath, ... }:
 
 {
   imports = [
+    (modulesPath + "/profiles/headless.nix")
     ./hardware-configuration.nix
     nixos-hardware.nixosModules.pcengines-apu
     nixos-hardware.nixosModules.common-pc-ssd
@@ -25,4 +26,7 @@
   # everything. This is supposed to increase performance by hitting
   # CPU cache more often. 
   services.irqbalance.enable = true;
+
+  # Re-enable the serial console, disabled by the headless profile
+  systemd.services."serial-getty@ttyS0".enable = true;
 }
