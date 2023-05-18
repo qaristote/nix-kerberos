@@ -1,5 +1,5 @@
 { ... }:
 
 {
-  imports = [ ./ap.nix ./dhcp.nix ./dns.nix ./firewall.nix ];
+  imports = [ ./ap.nix ./dhcp.nix ./dns.nix ./firewall ];
 }

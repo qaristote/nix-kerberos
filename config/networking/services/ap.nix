@@ -2,12 +2,12 @@
 
 let
   cfg = config.services.hostapd;
-  makeHostapdConf = { name, interface ? cfg.interface, driver ? cfg.driver, ssid
+  makeHostapdConf = { name, device, interface, driver ? cfg.driver, ssid
     , hwMode ? cfg.hwMode, channel ? cfg.channel, countryCode ? cfg.countryCode
     , passphrase ? secrets.wifi."${name}".passphrase, logLevel ? cfg.logLevel
     , extraConfig ? "" }:
     builtins.toFile "hostapd.${name}.conf" (''
-      interface=${interface}
+      interface=${device}
       driver=${driver}
 
       # IEEE 802.11
@@ -23,6 +23,9 @@ let
       ieee80211d=1
       country_code=${countryCode}
 
+      # disable low-level bridging of frames
+      ap_isolate=1
+      bridge=${interface}
 
       # WPA/IEEE 802.11i
       wpa=2
@@ -80,7 +83,7 @@ let
     '' + extraConfig);
   hostapdIotConf = makeHostapdConf {
     name = "iot";
-    interface = config.personal.networking.networks.iot.interface;
+    inherit (config.personal.networking.networks.iot) device interface;
     ssid = "Quentinternet of Things";
     hwMode = "g";
     channel = 0;
@@ -93,7 +96,7 @@ let
   };
   hostapdWanConf = makeHostapdConf {
     name = "wan";
-    interface = config.personal.networking.networks.wan.interface;
+    inherit (config.personal.networking.networks.wan) device interface;
     ssid = "Quentintranet";
     hwMode = "a";
     channel = 36;
@@ -119,15 +122,17 @@ in {
   };
 
   systemd.services.hostapd = let
-    interfaces = with config.personal.networking.networks; [
+    devices = with config.personal.networking.networks; [
+      wan.device
       wan.interface
+      iot.device
       iot.interface
     ];
-    netDevices = builtins.map (interface:
-      "sys-subsystem-net-devices-${utils.escapeSystemdPath interface}.device")
-      interfaces;
+    netDevices = builtins.map (device:
+      "sys-subsystem-net-devices-${utils.escapeSystemdPath device}.device")
+      devices;
     networkLinkServices =
-      builtins.map (interface: "network-link-${interface}.service") interfaces;
+      builtins.map (device: "network-link-${device}.service") devices;
   in {
     serviceConfig.ExecStart = lib.mkForce
       "${pkgs.hostapd}/bin/hostapd ${hostapdIotConf} ${hostapdWanConf}";

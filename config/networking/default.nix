@@ -4,13 +4,19 @@
 
 let cfg = config.personal.networking;
 in {
-  imports = [ ./services ];
+  imports = [ ./bridges.nix ./services ];
 
   options.personal.networking = {
     networks = lib.mkOption {
       type = with lib.types;
         attrsOf (submodule {
           options = {
+            device = lib.mkOption {
+              type = with lib.types; nullOr str;
+              default = null;
+              description = "Name of the network device.";
+              example = "wlp1s0";
+            };
             interface = lib.mkOption {
               type = lib.types.str;
               description = "Name of the network interface.";
@@ -54,12 +60,14 @@ in {
           };
         };
         wan = {
-          interface = "wlp1s0";
+          device = "wlp1s0";
+          interface = "wan";
           subnet = "192.168.2";
           machines = { self.address = "192.168.2.1"; };
         };
         iot = {
-          interface = "wlp5s0";
+          device = "wlp5s0";
+          interface = "iot";
           subnet = "192.168.3";
           machines = { self.address = "192.168.3.1"; };
         };
@@ -76,6 +84,7 @@ in {
         inherit (machines.livebox) address;
       };
 
+      useDHCP = false;
       dhcpcd.enable = false;
       interfaces = lib.concatMapAttrs (name: value: {
         "${value.interface}" = {
@@ -86,6 +95,7 @@ in {
           };
         };
       }) cfg.networks;
+
     };
   };
 }
