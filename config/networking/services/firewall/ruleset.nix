@@ -1,6 +1,21 @@
-{ lan, wan, iot, ... }:
+{ lib, nets }:
 
 let
+  makeTable = args:
+    {
+      chains = { };
+      flowtables = { };
+      sets = { };
+      maps = { };
+      objects = { };
+    } // args;
+  makeFlowtable = args:
+    {
+      hook = "ingress";
+      priority = "filter";
+      devices = [ ];
+      offload = false;
+    } // args;
   makeBaseChain = type: hook:
     { priority ? type, policy ? "drop", rules ? "" }: {
       base = { inherit type hook priority policy; };
@@ -53,54 +68,70 @@ let
   };
 in {
   ip = {
-    filter = {
-      wan_in.rules = with rulesCommon; dns + dhcp + ssh;
-      iot_in.rules = with rulesCommon; dns + dhcp;
-      input = makeBaseChain "filter" "input" {
-        rules = with rulesCommon;
-          conntrack + ping + ''
-            meta iifname vmap { lo               : accept      \
-                              , ${lan.interface} : drop        \
-                              , ${wan.interface} : goto wan_in \
-                              , ${iot.interface} : goto iot_in }
-          '';
+    filter = makeTable {
+      flowtables = {
+        default = makeFlowtable {
+          devices = lib.mapAttrsToList (_: { device, ... }: device) nets;
+        };
       };
-      forward = makeBaseChain "filter" "forward" {
-        rules = with rulesCommon;
-          conntrack + ''
-            meta oifname ${lan.interface} accept
-          '';
+      chains = {
+        wan_in.rules = with rulesCommon; dns + dhcp + ssh;
+        iot_in.rules = with rulesCommon; dns + dhcp;
+        input = makeBaseChain "filter" "input" {
+          rules = with rulesCommon;
+            conntrack + ping + ''
+              meta iifname vmap { lo               : accept      \
+                                , ${nets.lan.interface} : drop        \
+                                , ${nets.wan.interface} : goto wan_in \
+                                , ${nets.iot.interface} : goto iot_in }
+            '';
+        };
+        forward = makeBaseChain "filter" "forward" {
+          rules = with rulesCommon;
+            ''
+              ip protocol { udp, tcp } flow add @default
+            '' + conntrack + ''
+              meta oifname ${nets.lan.interface} accept
+            '';
+        };
       };
     };
-    nat = {
-      postrouting = makeBaseChain "nat" "postrouting" {
-        priority = "srcnat";
-        policy = "accept";
-        rules = ''
-          meta oifname ${lan.interface} snat to ${lan.machines.self.address}
-        '';
+    nat = makeTable {
+      chains = {
+        postrouting = makeBaseChain "nat" "postrouting" {
+          priority = "srcnat";
+          policy = "accept";
+          rules = ''
+            meta oifname ${nets.lan.interface} \
+              snat to ${nets.lan.machines.self.address}
+          '';
+        };
       };
     };
   };
 
   ip6 = {
-    global6 = {
-      input = makeBaseChain "filter" "input" { };
-      forward = makeBaseChain "filter" "forward" { };
+    global6 = makeTable {
+      chains = {
+        input = makeBaseChain "filter" "input" { };
+        forward = makeBaseChain "filter" "forward" { };
+      };
     };
   };
 
   bridge = {
-    filter = {
-      wan_wan.rules = with rulesCommon; syncthing + kdeconnect;
-      forward = makeBaseChain "filter" "forward" {
-        rules = with rulesCommon;
-          conntrack + ''
-            ether type vmap { ip6 : drop, arp : accept }
-          '' + ping + ''
-            meta ibrname . meta obrname vmap \
-              { ${wan.interface} . ${wan.interface} : goto wan_wan }
-          '';
+    filter = makeTable {
+      chains = {
+        wan_wan.rules = with rulesCommon; syncthing + kdeconnect;
+        forward = makeBaseChain "filter" "forward" {
+          rules = with rulesCommon;
+            conntrack + ''
+              ether type vmap { ip6 : drop, arp : accept }
+            '' + ping + ''
+              meta ibrname . meta obrname vmap \
+                { ${nets.wan.interface} . ${nets.wan.interface} : goto wan_wan }
+            '';
+        };
       };
     };
   };

@@ -51,8 +51,10 @@ in {
       enable = true;
       ssh.enable = true;
       networks = {
-        lan = {
-          interface = "enp4s0";
+        lan = let device = "enp4s0";
+        in {
+          inherit device;
+          interface = device;
           subnet = "192.168.1";
           machines = {
             livebox = { address = "192.168.1.1"; };
