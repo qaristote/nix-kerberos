@@ -119,6 +119,7 @@ in {
     enable = true;
     driver = "nl80211";
     countryCode = "FR";
+    interface = "";
   };
 
   systemd.services.hostapd = let
