@@ -1,7 +1,7 @@
 {
   inputs = {
     my-nixpkgs.url = "github:qaristote/my-nixpkgs";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.11-small";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05-small";
   };
 
   outputs = { self, nixpkgs, my-nixpkgs, nixos-hardware, ... }: {
