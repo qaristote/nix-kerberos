@@ -90,7 +90,7 @@ let
     extraConfig = ''
       # IEEE 802.11n
       ieee80211n=1
-      require_ht=1
+      require_ht=0 # sonos play:1 doesn't support ht
       ht_capab=[HT40+][SHORT-GI-40][TX-STBC][RX-STBC1][DSSS_CCK-40]
     '';
   };
