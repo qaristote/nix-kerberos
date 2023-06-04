@@ -15,6 +15,7 @@ in {
   networking = {
     nftables = {
       enable = true;
+      checkRuleset = false;
       ruleset = mapAttrsStrings (import ./ruleset.nix {
         inherit lib;
         nets = config.personal.networking.networks;
