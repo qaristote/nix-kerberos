@@ -125,9 +125,7 @@ in {
   systemd.services.hostapd = let
     devices = with config.personal.networking.networks; [
       wan.device
-      wan.interface
       iot.device
-      iot.interface
     ];
     netDevices = builtins.map (device:
       "sys-subsystem-net-devices-${utils.escapeSystemdPath device}.device")
