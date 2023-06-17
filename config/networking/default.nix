@@ -71,7 +71,11 @@ in {
           device = "wlp5s0";
           interface = "iot";
           subnet = "192.168.3";
-          machines = { self.address = "192.168.3.1"; };
+          machines = {
+            self.address = "192.168.3.1";
+            sonos-move.address = "192.168.3.28";
+            sonos-play1.address = "192.168.3.29";
+          };
         };
       };
     };

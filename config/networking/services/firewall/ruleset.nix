@@ -67,15 +67,19 @@ let
     '';
     # https://support.sonos.com/en-us/article/configure-your-firewall-to-work-with-sonos
     # https://en.community.sonos.com/advanced-setups-229000/changed-udp-tcp-ports-for-sonos-app-needed-after-update-to-s2-6842454
-    sonos-app = ''
-      ip protocol tcp \
-        tcp dport { 1400, 1443, 3400, 3401, 3500, 4444 } \
-        accept comment "sonos: app control"
-      ip protocol udp \
-        udp dport { 1901, 6969, 32412, 32414 } \
-        accept comment "sonos: app control"
-    '';
-    #   # https://docs.syncthing.net/users/firewall.html
+    sonos = {
+      controller-player = ''
+        ip protocol tcp \
+          tcp dport { 1400, 1443, 4444 } \
+          accept comment "sonos: app control: system update"
+      '';
+      player-controller = ''
+        ip protocol tcp \
+          tcp dport { 3400, 3401, 3500 } \
+          accept comment "sonos: app control: player to controller"
+      '';
+    };
+    # https://docs.syncthing.net/users/firewall.html
     syncthing = ''
       ip protocol tcp   \
         tcp sport 22000 \
@@ -95,28 +99,27 @@ in {
         };
       };
       chains = {
-        wan_in.rules = with rulesCommon; dns + dhcp + ssh;
+        wan_in.rules = with rulesCommon; dns + dhcp + ssh + ssdp;
         iot_in.rules = with rulesCommon; dns + dhcp + igmp;
-        lan_in.rules = rulesCommon.igmp;
         input = makeBaseChain "filter" "input" {
           rules = with rulesCommon;
             conntrack + ping + ''
-              meta iifname vmap { lo               : accept      \
-                                , ${nets.lan.interface} : goto lan_in \
+              meta iifname vmap { lo                    : accept      \
                                 , ${nets.wan.interface} : goto wan_in \
                                 , ${nets.iot.interface} : goto iot_in }
             '';
         };
-        lan_wan.rules = with rulesCommon; sonos-app;
+        iot_wan.rules = rulesCommon.sonos.player-controller;
+        wan_iot.rules = with rulesCommon; sonos.controller-player + ssdp;
         forward = makeBaseChain "filter" "forward" {
           rules = with rulesCommon;
             ''
               ip protocol { udp, tcp } flow add @default
             '' + conntrack + ''
               meta oifname ${nets.lan.interface} accept
-              meta iifname ${nets.lan.interface} \
-                meta oifname ${nets.wan.interface} \
-                goto lan_wan
+              meta iifname . meta oifname vmap \
+                { ${nets.wan.interface} . ${nets.iot.interface} : goto wan_iot \
+                , ${nets.iot.interface} . ${nets.wan.interface} : goto iot_wan }
             '';
         };
       };
@@ -147,11 +150,14 @@ in {
   bridge = {
     filter = makeTable {
       chains = {
-        iot_wan.rules = rulesCommon.sonos-app;
-        wan_iot.rules = with rulesCommon; igmp + ssdp + sonos-app + ''
-          ip protocol udp udp sport 5353 udp dport 5353 accept comment mdns
-          log level debug prefix waniot
-        '';
+        iot_iot.rules = with rulesCommon;
+          ''
+            ip saddr { ${nets.iot.machines.sonos-move.address}  \
+                     , ${nets.iot.machines.sonos-play1.address} } \
+            ip daddr { ${nets.iot.machines.sonos-move.address}  \
+                     , ${nets.iot.machines.sonos-play1.address} } \
+              accept comment "sonos: player to player"         
+          '' + ssdp + sonos.player-controller + sonos.controller-player;
         wan_wan.rules = with rulesCommon; syncthing + kdeconnect;
         forward = makeBaseChain "filter" "forward" {
           rules = with rulesCommon;
@@ -160,8 +166,7 @@ in {
             '' + ping + ''
               meta ibrname . meta obrname vmap \
                 { ${nets.wan.interface} . ${nets.wan.interface} : goto wan_wan \
-                , ${nets.wan.interface} . ${nets.iot.interface} : goto wan_iot \
-                , ${nets.iot.interface} . ${nets.iot.interface} : goto wan_iot }
+                , ${nets.iot.interface} . ${nets.iot.interface} : goto iot_iot }
             '';
         };
       };
@@ -169,20 +174,6 @@ in {
   };
 }
 
-# chain sonos {
-#   ip protocol tcp \
-#     tcp sport 4444 \
-#     tcp dport 4444 \
-#     accept comment "sonos: system updates"
-#     ip protocol udp \
-#     udp sport 6969 \
-#     udp dport 6969 \
-#     accept comment "sonos: setup"
-#     ip protocol udp \
-#     udp sport { 32413, 32414 } \
-#     udp dport { 32412, 32414 } \
-#     accept comment "sonos"
-# }
 # chain steam {
 #   # https://help.steampowered.com/en/faqs/view/2EA8-4D75-DA21-31EB
 #   ip protocol { udp, tcp } \
