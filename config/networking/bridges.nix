@@ -2,7 +2,7 @@
 
 let cfg = config.personal.networking;
 in {
-  config = lib.mkMerge (builtins.map (network:
+  config = lib.mkMerge ((builtins.map (network:
     let
       bridge = network.interface;
       device = network.device;
@@ -18,5 +18,10 @@ in {
         sleep 3
         ${pkgs.iproute2}/bin/bridge link set dev ${device} hairpin on
       '';
-    }) [ cfg.networks.wan cfg.networks.iot ]);
+    }) [ cfg.networks.wan cfg.networks.iot ]) ++ [{
+      systemd.services."${cfg.networks.wan.interface}-netdev".script = ''
+        echo Attaching enp3s0 to wan...
+        ip link set dev enp3s0 master wan
+      '';
+    }]);
 }
