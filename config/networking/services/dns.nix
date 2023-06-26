@@ -7,18 +7,21 @@ in {
     settings = {
       server = {
         module-config = ''"respip validator iterator"'';
-        interface =
-          [ "127.0.0.1" "${nets.wan.subnet}.1" "${nets.iot.subnet}.1" ];
+        interface = [
+          "127.0.0.1"
+          "${nets.wan.subnet}.1"
+          "${nets.iot.subnet}.1"
+          "${nets.eth0.subnet}.1"
+        ];
         access-control = [
           "0.0.0.0/0 refuse"
           "127.0.0.0/8 allow"
           "${nets.wan.subnet}.0/24 allow"
           "${nets.iot.subnet}.0/24 allow"
+          "${nets.eth0.subnet}.0/24 allow"
         ];
       };
-      rpz = {
-        name = "rpz.oisd.nl";
-      };
+      rpz = { name = "rpz.oisd.nl"; };
     };
   };
 }

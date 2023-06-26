@@ -77,6 +77,13 @@ in {
             sonos-play1.address = "192.168.3.29";
           };
         };
+        eth0 = let device = "enp3s0";
+        in {
+          inherit device;
+          interface = device;
+          subnet = "192.168.4";
+          machines = { self.address = "192.168.4.1"; };
+        };
       };
     };
 

@@ -18,7 +18,5 @@ in {
         sleep 3
         ${pkgs.iproute2}/bin/bridge link set dev ${device} hairpin on
       '';
-    }) [ nets.wan nets.iot ]) ++ [{
-      networking.bridges.${nets.wan.interface}.interfaces = [ "enp3s0" ];
-    }]);
+    }) [ nets.wan nets.iot ]));
 }

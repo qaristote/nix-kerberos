@@ -101,12 +101,14 @@ in {
       chains = {
         wan_in.rules = with rulesCommon; dns + dhcp + ssh + ssdp;
         iot_in.rules = with rulesCommon; dns + dhcp + igmp;
+        eth0_in.rules = with rulesCommon; dns + dhcp;
         input = makeBaseChain "filter" "input" {
           rules = with rulesCommon;
             conntrack + ping + ''
-              meta iifname vmap { lo                    : accept      \
-                                , ${nets.wan.interface} : goto wan_in \
-                                , ${nets.iot.interface} : goto iot_in }
+              meta iifname vmap { lo                     : accept       \
+                                , ${nets.wan.interface}  : goto wan_in  \
+                                , ${nets.iot.interface}  : goto iot_in  \
+                                , ${nets.eth0.interface} : goto eth0_in }
             '';
         };
         iot_wan.rules = rulesCommon.sonos.player-controller;
@@ -118,8 +120,10 @@ in {
             '' + conntrack + ''
               meta oifname ${nets.lan.interface} accept
               meta iifname . meta oifname vmap \
-                { ${nets.wan.interface} . ${nets.iot.interface} : goto wan_iot \
-                , ${nets.iot.interface} . ${nets.wan.interface} : goto iot_wan }
+                { ${nets.wan.interface} . ${nets.iot.interface} \
+                : goto wan_iot \
+                , ${nets.iot.interface} . ${nets.wan.interface} \
+                : goto iot_wan }
             '';
         };
       };
