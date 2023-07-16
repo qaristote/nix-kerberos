@@ -74,6 +74,12 @@ let
           accept comment "sonos: app control: system update"
       '';
       player-controller = ''
+        ip protocol udp \
+          ip saddr { ${nets.iot.machines.sonos-move.address}  \
+                   , ${nets.iot.machines.sonos-play1.address} }
+          udp sport >30000
+          udp dport >30000
+          accept comment "sonos: app control: player to controller" 
         ip protocol tcp \
           tcp dport { 3400, 3401, 3500 } \
           accept comment "sonos: app control: player to controller"
