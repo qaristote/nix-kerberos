@@ -6,8 +6,10 @@ in {
     enable = true;
     settings = let subnets = with nets; [ wan iot eth0 ];
     in {
-      interfaces-config.interfaces =
-        builtins.map (network: network.interface) subnets;
+      interfaces-config = {
+        interfaces = builtins.map (network: network.interface) subnets;
+        service-sockets-retry-wait-time = 5000;
+      };
       lease-database = {
         name = "/var/lib/kea/dhcp4.leases";
         persist = true;
