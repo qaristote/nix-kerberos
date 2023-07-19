@@ -44,4 +44,8 @@ in {
       }) subnets;
     };
   };
+
+  systemd.services.kea-dhcp4-server.after =
+    builtins.map (subnet: "${subnet.interface}-netdev.service")
+    (with nets; [ wan iot ]);
 }
