@@ -2,6 +2,7 @@
 
 let
   cfg = config.services.hostapd;
+  nets = config.personal.networking.networks;
   makeHostapdConf = { name, device, interface, driver ? cfg.driver, ssid
     , hwMode ? cfg.hwMode, channel ? cfg.channel, countryCode ? cfg.countryCode
     , passphrase ? secrets.wifi."${name}".passphrase, logLevel ? cfg.logLevel
@@ -83,7 +84,7 @@ let
     '' + extraConfig);
   hostapdIotConf = makeHostapdConf {
     name = "iot";
-    inherit (config.personal.networking.networks.iot) device interface;
+    inherit (nets.iot) device interface;
     ssid = "Quentinternet of Things";
     hwMode = "g";
     channel = 0;
@@ -96,7 +97,7 @@ let
   };
   hostapdWanConf = makeHostapdConf {
     name = "wan";
-    inherit (config.personal.networking.networks.wan) device interface;
+    inherit (nets.wan) device interface;
     ssid = "Quentintranet";
     hwMode = "a";
     channel = 36;
@@ -123,20 +124,18 @@ in {
   };
 
   systemd.services.hostapd = let
-    devices = with config.personal.networking.networks; [
-      wan.device
-      iot.device
-    ];
-    netDevices = builtins.map (device:
-      "sys-subsystem-net-devices-${utils.escapeSystemdPath device}.device")
-      devices;
-    networkLinkServices =
-      builtins.map (device: "network-link-${device}.service") devices;
+    subnets = with nets; [ wan iot ];
+    netDevices = builtins.map (subnet:
+      "sys-subsystem-net-devices-${
+        utils.escapeSystemdPath subnet.device
+      }.device") subnets;
+    netdevServices =
+      builtins.map (subnet: "${subnet.interface}-netdev.service") subnets;
+    dependencies = lib.mkForce (netDevices ++ netdevServices);
   in {
     serviceConfig.ExecStart = lib.mkForce
       "${pkgs.hostapd}/bin/hostapd ${hostapdIotConf} ${hostapdWanConf}";
-    after = lib.mkForce netDevices;
-    bindsTo = lib.mkForce netDevices;
-    requiredBy = lib.mkForce networkLinkServices;
+    after = dependencies;
+    bindsTo = dependencies;
   };
 }

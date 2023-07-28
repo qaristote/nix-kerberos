@@ -2,7 +2,11 @@
 
 let nets = config.personal.networking.networks;
 in {
-  config = lib.mkMerge ((builtins.map (network:
+  config = lib.mkMerge ([{
+    systemd.services.hostapd.postStart = lib.mkBefore ''
+      sleep 3
+    '';
+  }] ++ (builtins.map (network:
     let
       bridge = network.interface;
       device = network.device;
@@ -15,7 +19,7 @@ in {
       '';
 
       systemd.services.hostapd.postStart = ''
-        sleep 3
+        echo Setting ${device} to hairpin mode...
         ${pkgs.iproute2}/bin/bridge link set dev ${device} hairpin on
       '';
     }) [ nets.wan nets.iot ]));

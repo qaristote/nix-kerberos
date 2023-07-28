@@ -1,6 +1,9 @@
 { config, ... }:
 
-let nets = config.personal.networking.networks;
+let
+  nets = config.personal.networking.networks;
+  netdevServices = builtins.map (subnet: "${subnet.interface}-netdev.service")
+    (with nets; [ wan iot ]);
 in {
   services.kea.dhcp4 = {
     enable = true;
@@ -45,7 +48,6 @@ in {
     };
   };
 
-  systemd.services.kea-dhcp4-server.after =
-    builtins.map (subnet: "${subnet.interface}-netdev.service")
-    (with nets; [ wan iot ]);
+  systemd.services.kea-dhcp4-server.after = netdevServices;
+  systemd.services.kea-dhcp4-server.bindsTo = netdevServices;
 }
