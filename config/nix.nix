@@ -12,6 +12,4 @@
     # for reading secrets from a file
     "--impure"
   ];
-
-  personal.monitoring.enable = true;
 }

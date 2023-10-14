@@ -9,7 +9,7 @@
       system = "x86_64-linux";
       commonModules = [
         my-nixpkgs.nixosModules.personal
-        ({ ... }: { nixpkgs.overlays = [ my-nixpkgs.overlays.default ]; })
+        ({ ... }: { nixpkgs.overlays = [ my-nixpkgs.overlays.personal ]; })
       ];
     in {
       kerberos = nixpkgs.lib.nixosSystem {
