@@ -11,6 +11,7 @@ in {
     in {
       interfaces-config = {
         interfaces = builtins.map (network: network.interface) subnets;
+        service-sockets-max-retries = 20;
         service-sockets-retry-wait-time = 5000;
       };
       lease-database = {
