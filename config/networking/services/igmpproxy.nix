@@ -5,9 +5,8 @@ let
   netdevServices = builtins.map (subnet: "${subnet.interface}-netdev.service")
     (with nets; [ wan iot ]);
   conf = pkgs.writeText "igmpproxy.conf" ''
-    phyint ${nets.wan.interface} upstream
-     ratelimit 0 threshold 1 phyint ${nets.iot.interface} downstream ratelimit 0
-     threshold 1 phyint ${nets.lan.interface} downstream ratelimit 0 threshold 1
+    phyint ${nets.wan.interface} upstream ratelimit 0 threshold 1
+    phyint ${nets.iot.interface} downstream ratelimit 0 threshold 1
   '';
 in {
   systemd.services.igmpproxy = {

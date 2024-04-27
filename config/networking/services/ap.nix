@@ -3,9 +3,9 @@
 let
   cfg = config.services.hostapd;
   nets = config.personal.networking.networks;
-  makeHostapdConf = { name, device, interface, driver ? cfg.driver, ssid
-    , hwMode ? cfg.hwMode, channel ? cfg.channel, countryCode ? cfg.countryCode
-    , passphrase ? secrets.wifi."${name}".passphrase, logLevel ? cfg.logLevel
+  makeHostapdConf = { name, device, interface, driver ? "nl80211", ssid
+    , hwMode ? "g", channel ? 0, countryCode ? "FR"
+    , passphrase ? secrets.wifi."${name}".passphrase, logLevel ? 2
     , extraConfig ? "" }:
     builtins.toFile "hostapd.${name}.conf" (''
       interface=${device}
@@ -116,12 +116,7 @@ let
     '';
   };
 in {
-  services.hostapd = {
-    enable = true;
-    driver = "nl80211";
-    countryCode = "FR";
-    interface = "";
-  };
+  services.udev.packages = [ pkgs.crda ];
 
   systemd.services.hostapd = let
     subnets = with nets; [ wan iot ];
@@ -132,10 +127,48 @@ in {
     netdevServices =
       builtins.map (subnet: "${subnet.interface}-netdev.service") subnets;
     dependencies = lib.mkForce (netDevices ++ netdevServices);
-  in {
-    serviceConfig.ExecStart = lib.mkForce
-      "${pkgs.hostapd}/bin/hostapd ${hostapdIotConf} ${hostapdWanConf}";
+  in lib.mkForce {
+    # from https://github.com/NixOS/nixpkgs/blob/23.05/nixos/modules/services/networking/hostapd.nix
+    # with hardening from https://github.com/NixOS/nixpkgs/blob/23.11/nixos/modules/services/networking/hostapd.nix
+    description = "IEEE 802.11 Host Access-Point Daemon";
+
+    path = [ pkgs.hostapd ];
     after = dependencies;
     bindsTo = dependencies;
+    wantedBy = [ "multi-user.target" ];
+
+    serviceConfig = {
+      ExecStart = "${pkgs.hostapd}/bin/hostapd ${hostapdIotConf} ${hostapdWanConf}";
+      Restart = "always";
+      ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
+      RuntimeDirectory = "hostapd";
+
+      # Hardening
+      LockPersonality = true;
+      MemoryDenyWriteExecute = true;
+      DevicePolicy = "closed";
+      DeviceAllow = "/dev/rfkill rw";
+      NoNewPrivileges = true;
+      PrivateUsers = false; # hostapd requires true root access.
+      PrivateTmp = true;
+      ProtectClock = true;
+      ProtectControlGroups = true;
+      ProtectHome = true;
+      ProtectHostname = true;
+      ProtectKernelLogs = true;
+      ProtectKernelModules = true;
+      ProtectKernelTunables = true;
+      ProtectProc = "invisible";
+      ProcSubset = "pid";
+      ProtectSystem = "strict";
+      RestrictAddressFamilies =
+        [ "AF_INET" "AF_INET6" "AF_NETLINK" "AF_UNIX" "AF_PACKET" ];
+      RestrictNamespaces = true;
+      RestrictRealtime = true;
+      RestrictSUIDSGID = true;
+      SystemCallArchitectures = "native";
+      SystemCallFilter = [ "@system-service" "~@privileged" "@chown" ];
+      UMask = "0077";
+    };
   };
 }
