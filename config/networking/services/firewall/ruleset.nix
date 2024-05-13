@@ -76,10 +76,10 @@ let
       player-controller = ''
         ip protocol udp \
           ip saddr { ${nets.iot.machines.sonos-move.address}  \
-                   , ${nets.iot.machines.sonos-play1.address} }
-          udp sport >30000
-          udp dport >30000
-          accept comment "sonos: app control: player to controller" 
+                   , ${nets.iot.machines.sonos-play1.address} } \
+          udp sport >30000 \
+          udp dport >30000 \
+          accept comment "sonos: app control: player to controller"
         ip protocol tcp \
           tcp dport { 3400, 3401, 3500 } \
           accept comment "sonos: app control: player to controller"
@@ -166,7 +166,7 @@ in {
                      , ${nets.iot.machines.sonos-play1.address} } \
             ip daddr { ${nets.iot.machines.sonos-move.address}  \
                      , ${nets.iot.machines.sonos-play1.address} } \
-              accept comment "sonos: player to player"         
+              accept comment "sonos: player to player"
           '' + ssdp + sonos.player-controller + sonos.controller-player;
         wan_wan.rules = with rulesCommon; syncthing + kdeconnect;
         forward = makeBaseChain "filter" "forward" {

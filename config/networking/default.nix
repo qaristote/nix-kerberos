@@ -73,8 +73,8 @@ in {
           subnet = "192.168.3";
           machines = {
             self.address = "192.168.3.1";
-            sonos-move.address = "192.168.3.28";
-            sonos-play1.address = "192.168.3.29";
+            sonos-move.address = "192.168.3.10";
+            sonos-play1.address = "192.168.3.11";
           };
         };
         eth0 = let device = "enp3s0";
