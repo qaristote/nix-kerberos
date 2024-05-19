@@ -1,13 +1,17 @@
-{ config, ... }:
-
-let
+{
+  config,
+  lib,
+  ...
+}: let
   nets = config.personal.networking.networks;
-  netdevServices = builtins.map (subnet: "${subnet.interface}-netdev.service")
-    (with nets; [ wan iot ]);
+  netdevServices =
+    builtins.map (subnet: "${subnet.interface}-netdev.service")
+    (with nets; [wan iot]);
 in {
   services.kea.dhcp4 = {
     enable = true;
-    settings = let subnets = with nets; [ wan iot eth0 ];
+    settings = let
+      subnets = with nets; [wan iot eth0];
     in {
       interfaces-config = {
         interfaces = builtins.map (network: network.interface) subnets;
@@ -31,21 +35,34 @@ in {
           data = "255.255.255.0";
         }
       ];
-      subnet4 = builtins.map (network: {
-        subnet = "${network.subnet}.0/24";
-        option-data = [
-          {
-            name = "broadcast-address";
-            data = "${network.subnet}.255";
-          }
-          {
-            name = "routers";
-            data = network.machines.self.address;
-          }
-        ];
-        inherit (network) interface;
-        pools = [{ pool = "${network.subnet}.10 - ${network.subnet}.99"; }];
-      }) subnets;
+      subnet4 =
+        builtins.map (network: {
+          subnet = "${network.subnet}.0/24";
+          option-data = [
+            {
+              name = "broadcast-address";
+              data = "${network.subnet}.255";
+            }
+            {
+              name = "routers";
+              data = network.machines.self.ip;
+            }
+          ];
+          inherit (network) interface;
+          pools = [{pool = "${network.subnet}.10 - ${network.subnet}.99";}];
+          reservations = let
+            machines = builtins.attrValues (lib.filterAttrs (name: {mac, ...}: name != "self" && mac != null) network.machines);
+          in
+            builtins.map ({
+              ip,
+              mac,
+            }: {
+              hw-address = mac;
+              ip-address = ip;
+            })
+            machines;
+        })
+        subnets;
     };
   };
 

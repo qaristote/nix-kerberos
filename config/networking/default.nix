@@ -1,10 +1,13 @@
 # https://skogsbrus.xyz/blog/2022/06/12/router/
 # https://blog.fraggod.net/2017/04/27/wifi-hostapd-configuration-for-80211ac-networks.html
-{ config, lib, pkgs, secrets, ... }:
-
-let cfg = config.personal.networking;
+{
+  config,
+  lib,
+  ...
+}: let
+  cfg = config.personal.networking;
 in {
-  imports = [ ./bridges.nix ./services ];
+  imports = [./bridges.nix ./services];
 
   options.personal.networking = {
     networks = lib.mkOption {
@@ -31,10 +34,16 @@ in {
               type = with lib.types;
                 attrsOf (submodule {
                   options = {
-                    address = lib.mkOption {
+                    ip = lib.mkOption {
                       type = lib.types.str;
                       description = "IP address of this machine.";
                       example = "192.168.1.1";
+                    };
+                    mac = lib.mkOption {
+                      type = with lib.types; nullOr str;
+                      description = "MAC address of this machine.";
+                      default = null;
+                      example = "01:23:45:67:89:ab";
                     };
                   };
                 });
@@ -51,38 +60,52 @@ in {
       enable = true;
       ssh.enable = true;
       networks = {
-        lan = let device = "enp4s0";
+        lan = let
+          device = "enp4s0";
         in {
           inherit device;
           interface = device;
           subnet = "192.168.1";
           machines = {
-            livebox = { address = "192.168.1.1"; };
-            self = { address = "192.168.1.2"; };
+            livebox = {ip = "192.168.1.1";};
+            self = {ip = "192.168.1.2";};
           };
         };
         wan = {
           device = "wlp1s0";
           interface = "wan";
           subnet = "192.168.2";
-          machines = { self.address = "192.168.2.1"; };
+          machines = {self.ip = "192.168.2.1";};
         };
         iot = {
           device = "wlp5s0";
           interface = "iot";
           subnet = "192.168.3";
           machines = {
-            self.address = "192.168.3.1";
-            sonos-move.address = "192.168.3.10";
-            sonos-play1.address = "192.168.3.11";
+            self.ip = "192.168.3.1";
+            sonos-move = {
+              ip = "192.168.3.10";
+              mac = "54:2a:1b:73:7a:1e";
+            };
+            sonos-play1 = {
+              ip = "192.168.3.11";
+              mac = "5c:aa:fd:44:b2:6a";
+            };
           };
         };
-        eth0 = let device = "enp3s0";
+        eth0 = let
+          device = "enp3s0";
         in {
           inherit device;
           interface = device;
           subnet = "192.168.4";
-          machines = { self.address = "192.168.4.1"; };
+          machines = {
+            self.ip = "192.168.4.1";
+            steam-deck = {
+              ip = "192.168.4.10";
+              mac = "10:82:86:22:90:17";
+            };
+          };
         };
       };
     };
@@ -90,25 +113,30 @@ in {
     networking = {
       hostName = "kerberos";
       domain = "local";
-      nameservers = [ cfg.networks.lan.machines.livebox.address ];
+      nameservers = [cfg.networks.lan.machines.livebox.ip];
 
       defaultGateway = with cfg.networks.lan; {
         inherit interface;
-        inherit (machines.livebox) address;
+        address = machines.livebox.ip;
       };
 
       useDHCP = false;
       dhcpcd.enable = false;
-      interfaces = lib.concatMapAttrs (name: value: {
-        "${value.interface}" = {
-          useDHCP = false;
-          ipv4.addresses = lib.optional (value.machines ? self) {
-            inherit (value.machines.self) address;
-            prefixLength = 24;
+      interfaces =
+        lib.concatMapAttrs (_: {
+          interface,
+          machines,
+          ...
+        }: {
+          "${interface}" = {
+            useDHCP = false;
+            ipv4.addresses = lib.optional (machines ? self) {
+              address = machines.self.ip;
+              prefixLength = 24;
+            };
           };
-        };
-      }) cfg.networks;
-
+        })
+        cfg.networks;
     };
   };
 }
