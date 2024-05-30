@@ -11,7 +11,7 @@ in {
   services.kea.dhcp4 = {
     enable = true;
     settings = let
-      subnets = with nets; [wan iot eth0];
+      subnets = with nets; [wan iot];
     in {
       interfaces-config = {
         interfaces = builtins.map (network: network.interface) subnets;
