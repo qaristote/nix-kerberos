@@ -93,11 +93,9 @@ in {
             };
           };
         };
-        eth0 = let
+        eth0 = {
           device = "enp3s0";
-        in {
-          inherit device;
-          interface = device;
+          interface = "eth0";
           subnet = "192.168.4";
           machines = {
             self.ip = "192.168.4.1";
