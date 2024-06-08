@@ -66,6 +66,8 @@ in {
     };
   };
 
-  systemd.services.kea-dhcp4-server.after = netdevServices;
-  systemd.services.kea-dhcp4-server.bindsTo = netdevServices;
+  systemd.services.kea-dhcp4-server = {
+    after = netdevServices;
+    bindsTo = netdevServices;
+  };
 }
