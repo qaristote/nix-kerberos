@@ -25,6 +25,7 @@ in {
           '';
         };
         boot.kernelModules = ["dummy"];
+        systemd.services.network-addresses-enp3s0-dummy.enable = false;
       }
     ]
     ++ (builtins.map (network: let
