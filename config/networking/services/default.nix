@@ -1,6 +1,3 @@
-{ ... }:
-
-{
-  imports =
-    [ ./ap.nix ./dhcp.nix ./dns.nix ./firewall ./igmpproxy.nix ];
+{...}: {
+  imports = [./ap.nix ./dhcp.nix ./dns.nix ./firewall ./ifplugd.nix ./igmpproxy.nix];
 }

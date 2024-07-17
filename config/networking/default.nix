@@ -95,7 +95,7 @@ in {
         };
         eth0 = {
           device = "enp3s0";
-          interface = "eth0";
+          interface = "enp3s0";
           subnet = "192.168.4";
           machines = {
             self.ip = "192.168.4.1";

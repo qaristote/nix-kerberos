@@ -12,21 +12,6 @@ in {
           sleep 3
         '');
       }
-      {
-        # create a bridge on top of enp3s0 along with a dummy interface
-        # for kea to work even when enp3s0 is disconnected
-        # if you change this, you may want to change:
-        # - the kea configuration in ./services/dhcp.nix
-        # - the eth0 net configuration ./default.nix
-        networking = {
-          bridges.eth0.interfaces = ["enp3s0" "enp3s0-dummy"];
-          localCommands = ''
-            ip link add enp3s0-dummy type dummy
-          '';
-        };
-        boot.kernelModules = ["dummy"];
-        systemd.services.network-addresses-enp3s0-dummy.enable = false;
-      }
     ]
     ++ (builtins.map (network: let
       bridge = network.interface;
