@@ -127,6 +127,8 @@ in {
         };
         iot_wan.rules = rulesCommon.sonos.player-controller;
         wan_iot.rules = with rulesCommon; sonos.controller-player + ssdp;
+        wan_eth0.rules = rulesCommon.kdeconnect;
+        eth0_wan.rules = rulesCommon.kdeconnect;
         forward = makeBaseChain "filter" "forward" {
           rules = with rulesCommon;
             ''
@@ -136,10 +138,14 @@ in {
             + ''
               meta oifname ${nets.lan.interface} accept
               meta iifname . meta oifname vmap \
-                { ${nets.wan.interface} . ${nets.iot.interface} \
-                : goto wan_iot \
-                , ${nets.iot.interface} . ${nets.wan.interface} \
-                : goto iot_wan }
+                { ${nets.wan.interface}  . ${nets.iot.interface}  \
+                : goto wan_iot  \
+                , ${nets.iot.interface}  . ${nets.wan.interface}  \
+                : goto iot_wan  \
+                , ${nets.wan.interface}  . ${nets.eth0.interface} \
+                : goto wan_eth0 \
+                , ${nets.eth0.interface} . ${nets.wan.interface}  \
+                : goto eth0_wan }
             '';
         };
       };
