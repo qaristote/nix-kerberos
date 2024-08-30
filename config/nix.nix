@@ -1,7 +1,7 @@
 {lib, ...}: {
   personal.nix = {
     enable = true;
-    autoUpgrade = true;
+    autoUpgrade.enable = true;
     gc.enable = true;
     flake = "git+file:///etc/nixos/";
   };
