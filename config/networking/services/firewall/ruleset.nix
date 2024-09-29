@@ -1,7 +1,11 @@
-{
-  lib,
-  nets,
-}: let
+{interfaces, ...}: let
+  machines = {
+    inherit
+      (interfaces.all.iot.machines)
+      sonos-play1
+      sonos-move
+      ;
+  };
   makeTable = args:
     {
       chains = {};
@@ -81,12 +85,14 @@
       '';
       player-controller = ''
         ip protocol udp \
-          ip saddr { ${nets.iot.machines.sonos-move.ip}  \
-                   , ${nets.iot.machines.sonos-play1.ip} } \
+          ip saddr { ${machines.sonos-move.ip}  \
+                   , ${machines.sonos-play1.ip} } \
           udp sport >30000 \
           udp dport >30000 \
           accept comment "sonos: app control: player to controller"
         ip protocol tcp \
+          ip saddr { ${machines.sonos-move.ip}  \
+                   , ${machines.sonos-play1.ip} } \
           tcp dport { 3400, 3401, 3500 } \
           accept comment "sonos: app control: player to controller"
       '';
@@ -107,28 +113,30 @@ in {
     filter = makeTable {
       flowtables = {
         default = makeFlowtable {
-          devices = lib.mapAttrsToList (_: {device, ...}: device) nets;
+          devices = builtins.attrNames interfaces.devices;
         };
       };
       chains = {
         wan_in.rules = with rulesCommon; dns + dhcp + ssh + ssdp;
         iot_in.rules = with rulesCommon; dns + dhcp + igmp;
-        eth0_in.rules = with rulesCommon; dns + dhcp;
+        guest_in.rules = with rulesCommon; dns + dhcp;
+        enp3s0_in.rules = with rulesCommon; dns + dhcp;
         input = makeBaseChain "filter" "input" {
           rules = with rulesCommon;
             conntrack
             + ping
             + ''
-              meta iifname vmap { lo                     : accept       \
-                                , ${nets.wan.interface}  : goto wan_in  \
-                                , ${nets.iot.interface}  : goto iot_in  \
-                                , ${nets.eth0.interface} : goto eth0_in }
+              meta iifname vmap { lo     : accept         \
+                                , wan    : goto wan_in    \
+                                , iot    : goto iot_in    \
+                                , guest  : goto guest_in  \
+                                , enp3s0 : goto enp3s0_in }
             '';
         };
         iot_wan.rules = rulesCommon.sonos.player-controller;
         wan_iot.rules = with rulesCommon; sonos.controller-player + ssdp;
-        wan_eth0.rules = rulesCommon.kdeconnect;
-        eth0_wan.rules = rulesCommon.kdeconnect;
+        wan_enp3s0.rules = rulesCommon.kdeconnect;
+        enp3s0_wan.rules = rulesCommon.kdeconnect;
         forward = makeBaseChain "filter" "forward" {
           rules = with rulesCommon;
             ''
@@ -136,16 +144,12 @@ in {
             ''
             + conntrack
             + ''
-              meta oifname ${nets.lan.interface} accept
-              meta iifname . meta oifname vmap \
-                { ${nets.wan.interface}  . ${nets.iot.interface}  \
-                : goto wan_iot  \
-                , ${nets.iot.interface}  . ${nets.wan.interface}  \
-                : goto iot_wan  \
-                , ${nets.wan.interface}  . ${nets.eth0.interface} \
-                : goto wan_eth0 \
-                , ${nets.eth0.interface} . ${nets.wan.interface}  \
-                : goto eth0_wan }
+              meta oifname enp4s0 accept
+              meta iifname . meta oifname vmap   \
+                { wan . iot    : goto wan_iot    \
+                , iot . wan    : goto iot_wan    \
+                , wan . enp3s0 : goto wan_enp3s0 \
+                , enp3s0 . wan : goto enp3s0_wan }
             '';
         };
       };
@@ -156,8 +160,8 @@ in {
           priority = "srcnat";
           policy = "accept";
           rules = ''
-            meta oifname ${nets.lan.interface} \
-              snat to ${nets.lan.machines.self.ip}
+            meta oifname enp4s0 \
+              snat to ${interfaces.all.enp4s0.machines.self.ip}
           '';
         };
       };
@@ -178,10 +182,10 @@ in {
       chains = {
         iot_iot.rules = with rulesCommon;
           ''
-            ip saddr { ${nets.iot.machines.sonos-move.ip}  \
-                     , ${nets.iot.machines.sonos-play1.ip} } \
-            ip daddr { ${nets.iot.machines.sonos-move.ip}  \
-                     , ${nets.iot.machines.sonos-play1.ip} } \
+            ip saddr { ${machines.sonos-move.ip}  \
+                     , ${machines.sonos-play1.ip} } \
+            ip daddr { ${machines.sonos-move.ip}  \
+                     , ${machines.sonos-play1.ip} } \
               accept comment "sonos: player to player"
           ''
           + ssdp
@@ -197,8 +201,8 @@ in {
             + ping
             + ''
               meta ibrname . meta obrname vmap \
-                { ${nets.wan.interface} . ${nets.wan.interface} : goto wan_wan \
-                , ${nets.iot.interface} . ${nets.iot.interface} : goto iot_iot }
+                { wan . wan : goto wan_wan \
+                , iot . iot : goto iot_iot }
             '';
         };
       };
