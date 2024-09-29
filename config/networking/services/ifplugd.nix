@@ -1,12 +1,8 @@
-{
-  config,
-  pkgs,
-  ...
-}: let
-  iface = config.personal.networking.networks.eth0.device;
+{pkgs, ...}: let
+  iface = "enp3s0";
   dhcpService = "kea-dhcp4-server.service";
   action = pkgs.writeShellApplication {
-    name = "ifplugd-enp3s0.action";
+    name = "ifplugd-${iface}.action";
     runtimeInputs = [pkgs.systemd];
     text = ''
       INTERFACE="$1"
@@ -30,7 +26,7 @@ in {
     script = ''
       #       iface       no-daemon no-auto no-shutdown delay-up run
       ifplugd -i ${iface} -n        -a      -q          -u 5     -r \
-              ${action}/bin/ifplugd-enp3s0.action
+              ${action}/bin/ifplugd-${iface}.action
     '';
     path = [pkgs.busybox];
   };

@@ -3,18 +3,18 @@
   lib,
   ...
 }: let
-  nets = config.personal.networking.networks;
+  ifaces = config.personal.networking.interfaces;
   netdevServices =
-    builtins.map (subnet: "${subnet.interface}-netdev.service")
-    (with nets; [wan iot]);
+    builtins.map (iface: "${iface}-netdev.service")
+    ["wan" "iot" "guest"]; # not enp3s0 because it may come down for good reasons
 in {
   services.kea.dhcp4 = {
     enable = true;
     settings = let
-      subnets = with nets; [wan iot eth0];
+      subnets = with ifaces; lib.filterAttrs (_: builtins.hasAttr "subnet") ifaces.all;
     in {
       interfaces-config = {
-        interfaces = builtins.map (network: network.interface) subnets;
+        interfaces = builtins.attrNames subnets;
         service-sockets-max-retries = 20;
         service-sockets-retry-wait-time = 5000;
       };
@@ -28,7 +28,7 @@ in {
       option-data = [
         {
           name = "domain-name-servers";
-          data = "${nets.lan.subnet}.1, 9.9.9.9";
+          data = lib.concatStringsSep ", " config.networking.nameservers;
         }
         {
           name = "subnet-mask";
@@ -36,31 +36,33 @@ in {
         }
       ];
       subnet4 =
-        builtins.map (network: {
-          subnet = "${network.subnet}.0/24";
+        lib.mapAttrsToList (interface: {
+          subnet,
+          machines,
+          ...
+        }: {
+          subnet = "${subnet.prefix}.0/${builtins.toString subnet.prefixLength}";
           option-data = [
             {
               name = "broadcast-address";
-              data = "${network.subnet}.255";
+              data = "${subnet.prefix}.255";
             }
             {
               name = "routers";
-              data = network.machines.self.ip;
+              data = machines.self.ip;
             }
           ];
-          inherit (network) interface;
-          pools = [{pool = "${network.subnet}.10 - ${network.subnet}.99";}];
-          reservations = let
-            machines = builtins.attrValues (lib.filterAttrs (name: {mac, ...}: name != "self" && mac != null) network.machines);
-          in
-            builtins.map ({
+          inherit interface;
+          pools = [{pool = "${subnet.prefix}.10 - ${subnet.prefix}.99";}];
+          reservations =
+            lib.mapAttrsToList (_: {
               ip,
               mac,
             }: {
               hw-address = mac;
               ip-address = ip;
             })
-            machines;
+            (lib.filterAttrs (name: addresses: name != "self" && addresses ? mac && addresses ? ip) machines);
         })
         subnets;
     };
