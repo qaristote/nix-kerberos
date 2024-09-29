@@ -22,7 +22,6 @@
         modules = commonModules ++ [./config];
         specialArgs = {
           inherit nixos-hardware;
-          secrets = import ./secrets.nix;
         };
       };
     };

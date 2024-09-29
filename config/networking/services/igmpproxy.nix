@@ -1,20 +1,25 @@
-{ config, pkgs, ... }:
-
-let
-  nets = config.personal.networking.networks;
-  netdevServices = builtins.map (subnet: "${subnet.interface}-netdev.service")
-    (with nets; [ wan iot ]);
-  conf = pkgs.writeText "igmpproxy.conf" ''
-    phyint ${nets.wan.interface} upstream ratelimit 0 threshold 1
-    phyint ${nets.iot.interface} downstream ratelimit 0 threshold 1
-  '';
+{
+  lib,
+  pkgs,
+  ...
+}: let
+  upstream = "wan";
+  downstream = ["iot"];
+  netdevServices = builtins.map (iface: "${iface}-netdev.service") ([upstream] ++ downstream);
+  conf = pkgs.writeText "igmpproxy.conf" (''
+      phyint ${upstream} upstream ratelimit 0 threshold 1
+    ''
+    + lib.concatMapStrings (iface: ''
+      phyint ${iface} downstream ratelimit 0 threshold 1
+    '')
+    downstream);
 in {
   systemd.services.igmpproxy = {
     description = "Multicast router utilizing IGMP forwarding";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "kea-dhcp4-server.service" ] ++ netdevServices;
+    wantedBy = ["multi-user.target"];
+    after = ["kea-dhcp4-server.service"] ++ netdevServices;
     bindsTo = netdevServices;
-    path = [ pkgs.igmpproxy ];
+    path = [pkgs.igmpproxy];
     script = "igmpproxy -v -n ${conf}";
   };
 }
