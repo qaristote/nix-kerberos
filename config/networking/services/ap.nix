@@ -95,7 +95,7 @@ in {
         };
         wifi5 = {
           enable = true;
-          require = true;
+          require = false;
           operatingChannelWidth = "80";
           capabilities = ["MAX-MPDU-11454" "RXLDPC" "SHORT-GI-80" "TX-STBC-2BY1" "RX-STBC-1" "MAX-A-MPDU-LEN-EXP7" "RX-ANTENNA-PATTERN" "TX-ANTENNA-PATTERN"];
         };
