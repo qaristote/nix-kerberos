@@ -19,7 +19,7 @@
     iface = radio + lib.optionalString (bridge != "wan") "-${bridge}";
   in {
     "${iface}" = {
-      ssid = ssids."${bridge}" + lib.optionalString (radio == "wlp5s0" && bridge != "guest") " (n)";
+      ssid = ssids."${bridge}" + lib.optionalString (radio == "wlp5s0" && bridge != "guest") " (2.4GHz)";
       bssid = ifaces."${iface}".machines.self.mac;
 
       authentication.mode = "wpa3-sae";
@@ -104,7 +104,16 @@ in {
         networks = let
           perBridgeAC = perBridgeCfg "wlp1s0";
         in
-          (perBridgeAC "wan") // (perBridgeAC "iot");
+          lib.mkMerge [
+            (perBridgeAC "wan")
+            (perBridgeAC "iot")
+            {
+              wlp1s0-iot.authentication = {
+                mode = lib.mkForce "wpa3-sae-transition";
+                wpaPskFile = "/etc/hostapd/iot.psk";
+              };
+            }
+          ];
       };
       wlp5s0 = {
         inherit countryCode driver settings;
@@ -120,7 +129,6 @@ in {
           perBridgeN = perBridgeCfg "wlp5s0";
         in
           (perBridgeN "wan")
-          // (perBridgeN "iot")
           // (perBridgeN "guest");
       };
     };
