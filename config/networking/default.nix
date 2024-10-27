@@ -62,24 +62,12 @@ in {
         wlan = {
           wlp1s0-iot = {
             device = "wlp1s0";
-            machines = {
-              self.mac = "02:f0:21:b6:11:fc";
-              sonos-move = {
-                ip = "192.168.3.10";
-                mac = "54:2a:1b:73:7a:1e";
-              };
-            };
+            machines.self.mac = "02:f0:21:b6:11:fc";
             bridges = ["iot"];
           };
           wlp5s0-iot = {
             device = "wlp5s0";
-            machines = {
-              self.mac = "02:f0:21:b2:61:09";
-              sonos-play1 = {
-                ip = "192.168.3.11";
-                mac = "5c:aa:fd:44:b2:6a";
-              };
-            };
+            machines.self.mac = "02:f0:21:b2:61:09";
             bridges = ["iot"];
           };
           wlp5s0-guest = {
@@ -103,7 +91,17 @@ in {
               prefix = "192.168.3";
               prefixLength = 24;
             };
-            machines.self.ip = "192.168.3.1";
+            machines = {
+              self.ip = "192.168.3.1";
+              sonos-move = {
+                ip = "192.168.3.10";
+                mac = "54:2a:1b:73:7a:1e";
+              };
+              sonos-play1 = {
+                ip = "192.168.3.11";
+                mac = "5c:aa:fd:44:b2:6a";
+              };
+            };
           };
           guest = {
             interfaces = ["wlp5s0-guest"];
