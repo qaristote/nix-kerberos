@@ -137,6 +137,10 @@ in {
         wan_iot.rules = with rulesCommon; sonos.controller-player + ssdp;
         wan_enp3s0.rules = rulesCommon.kdeconnect;
         enp3s0_wan.rules = rulesCommon.kdeconnect;
+        extranet.rules = ''
+          meta iifname wan accept
+          ip daddr != { 192.168.0.0-192.168.255.255, 172.16.0.0-172.31.255.255 } accept
+        '';
         forward = makeBaseChain "filter" "forward" {
           rules = with rulesCommon;
             ''
@@ -144,7 +148,7 @@ in {
             ''
             + conntrack
             + ''
-              meta oifname enp4s0 accept
+              meta oifname enp4s0 goto extranet
               meta iifname . meta oifname vmap   \
                 { wan . iot    : goto wan_iot    \
                 , iot . wan    : goto iot_wan    \
