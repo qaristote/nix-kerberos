@@ -4,8 +4,8 @@
   ...
 }: let
   ifaces = config.personal.networking.interfaces;
-  netdevServices =
-    builtins.map (iface: "${iface}-netdev.service")
+  dependencies =
+    builtins.concatMap (iface: ["${iface}-netdev.service" "network-addresses-${iface}.service"])
     ["wan" "iot" "guest"]; # not enp3s0 because it may come down for good reasons
 in {
   services.kea.dhcp4 = {
@@ -69,7 +69,7 @@ in {
   };
 
   systemd.services.kea-dhcp4-server = {
-    after = netdevServices;
-    bindsTo = netdevServices;
+    after = dependencies;
+    bindsTo = dependencies;
   };
 }
