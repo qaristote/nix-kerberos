@@ -1,4 +1,6 @@
 {lib, ...}: {
+  imports = [./remote-builds.nix];
+
   personal.nix = {
     enable = true;
     autoUpgrade.enable = true;

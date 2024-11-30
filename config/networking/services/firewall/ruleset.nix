@@ -5,6 +5,10 @@
       sonos-play1
       sonos-move
       ;
+    inherit
+      (interfaces.all.wan.machines)
+      hephaistos
+      ;
   };
   makeTable = args:
     {
@@ -195,7 +199,13 @@ in {
           + ssdp
           + sonos.player-controller
           + sonos.controller-player;
-        wan_wan.rules = with rulesCommon; syncthing + kdeconnect;
+        wan_wan.rules = with rulesCommon;
+          syncthing
+          + kdeconnect
+          + ''
+            ip daddr ${machines.hephaistos.ip} \
+              ${ssh}
+          '';
         forward = makeBaseChain "filter" "forward" {
           rules = with rulesCommon;
             conntrack

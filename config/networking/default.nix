@@ -78,7 +78,13 @@ in {
               prefix = "192.168.2";
               prefixLength = 24;
             };
-            machines.self.ip = "192.168.2.1";
+            machines = {
+              self.ip = "192.168.2.1";
+              hephaistos = {
+                ip = "192.168.2.2";
+                mac = "f4:a4:75:a1:a2:93";
+              };
+            };
           };
           iot = {
             interfaces = ["wlp1s0-iot"];
@@ -130,6 +136,23 @@ in {
         inherit interface;
         address = ifaces.all."${interface}".machines.livebox.ip;
       };
+
+      hosts = let
+        withMachines =
+          # [{machines: AttrSet, ...}]
+          lib.collect (value: builtins.isAttrs value.machines or false)
+          config.personal.networking.interfaces.all;
+        machineToHost =
+          # String -> {ip: String, ...} -> { name: String, value: String }
+          name: {ip, ...}: lib.nameValuePair ip "${name}.local";
+        pruneMachines =
+          # AttrSet -> {{ip: String, ...}}
+          lib.filterAttrs (name: value: name != "self" && (builtins.isString value.ip or false));
+        hosts =
+          # [{machines: AttrSet, ...}] -> [{String}]
+          lib.forEach withMachines ({machines, ...}: lib.mapAttrs' machineToHost (pruneMachines machines));
+      in
+        lib.zipAttrs hosts;
 
       useDHCP = false;
       dhcpcd.enable = false;

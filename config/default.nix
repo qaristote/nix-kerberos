@@ -5,7 +5,7 @@
     ./environment.nix
     ./hardware
     ./networking
-    ./nix.nix
+    ./nix
     ./users.nix
   ];
 
