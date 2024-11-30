@@ -9,9 +9,7 @@
     ./users.nix
   ];
 
-  # needed so that the server doesn't rebuild big packages
-  # originally enabled in modulesPath + profiles/minimal.nix
-  environment.noXlibs = false;
+  environment.noXlibs = true;
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
