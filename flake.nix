@@ -1,13 +1,11 @@
 {
   inputs = {
     my-nixpkgs.url = "github:qaristote/my-nixpkgs";
-    nixpkgs.url = "github:NixOS/nixpkgs/release-24.05";
-    nixpkgs-beta.url = "github:NixOS/nixpkgs/release-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
   };
 
   outputs = {
     nixpkgs,
-    nixpkgs-beta,
     my-nixpkgs,
     nixos-hardware,
     ...
@@ -16,7 +14,7 @@
       system = "x86_64-linux";
       commonModules = [
         my-nixpkgs.nixosModules.personal
-        ({...}: {nixpkgs.overlays = [my-nixpkgs.overlays.personal (_: _: {inherit (nixpkgs-beta.legacyPackages."${system}") nixos-rebuild;})];})
+        ({...}: {nixpkgs.overlays = [my-nixpkgs.overlays.personal];})
       ];
     in {
       kerberos = nixpkgs.lib.nixosSystem {

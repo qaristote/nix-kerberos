@@ -24,11 +24,11 @@
         "nur": "nur"
       },
       "locked": {
-        "lastModified": 1732973028,
-        "narHash": "sha256-0sfnMucFSqTGaPB4sIFwQAE+iQwLGNJ3dWsTFfon0FY=",
+        "lastModified": 1733090804,
+        "narHash": "sha256-SNHUon75+HwBGb+JtFh33zZja1jrMaYxOYJzOHBxHgc=",
         "owner": "qaristote",
         "repo": "my-nixpkgs",
-        "rev": "fdff621a490cb707a212e261e9f738c531ed45eb",
+        "rev": "54ec124ae568dac37a11348ce45e6f21737ad556",
         "type": "github"
       },
       "original": {
@@ -39,11 +39,11 @@
     },
     "nixos-hardware": {
       "locked": {
-        "lastModified": 1732483221,
-        "narHash": "sha256-kF6rDeCshoCgmQz+7uiuPdREVFuzhIorGOoPXMalL2U=",
+        "lastModified": 1733066523,
+        "narHash": "sha256-aQorWITXZu7b095UwnpUvcGt9dNJie/GO9r4hZfe2sU=",
         "owner": "NixOS",
         "repo": "nixos-hardware",
-        "rev": "45348ad6fb8ac0e8415f6e5e96efe47dd7f39405",
+        "rev": "fe01780d356d70fd119a19277bff71d3e78dad00",
         "type": "github"
       },
       "original": {
@@ -65,22 +65,6 @@
         "type": "indirect"
       }
     },
-    "nixpkgs-beta": {
-      "locked": {
-        "lastModified": 1732981179,
-        "narHash": "sha256-F7thesZPvAMSwjRu0K8uFshTk3ZZSNAsXTIFvXBT+34=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "62c435d93bf046a5396f3016472e8f7c8e2aed65",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "release-24.11",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nixpkgs-lib": {
       "locked": {
         "lastModified": 1722555339,
@@ -95,16 +79,16 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1732967653,
-        "narHash": "sha256-FFE2Ac749LNALTR9toJCflRBenkR6Cc5G165pqgwg/0=",
+        "lastModified": 1732981179,
+        "narHash": "sha256-F7thesZPvAMSwjRu0K8uFshTk3ZZSNAsXTIFvXBT+34=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "d634159c8bf583a28a7d963b9a3cb6729bb3b2f1",
+        "rev": "62c435d93bf046a5396f3016472e8f7c8e2aed65",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "release-24.05",
+        "ref": "nixos-24.11",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -127,8 +111,7 @@
       "inputs": {
         "my-nixpkgs": "my-nixpkgs",
         "nixos-hardware": "nixos-hardware",
-        "nixpkgs": "nixpkgs_2",
-        "nixpkgs-beta": "nixpkgs-beta"
+        "nixpkgs": "nixpkgs_2"
       }
     }
   },
