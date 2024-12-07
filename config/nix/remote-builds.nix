@@ -8,7 +8,7 @@
         # The weakly privileged user on the remote builder – if not set, 'root' is used – which will hopefully fail
         User nixremote
     '';
-    knownHosts."hephaistos.local".publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIPMlRcOB8142XkF8uFCLbyYhcqp4LioChXKAM3EGqSa";
+    knownHosts."hephaistos.local".publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHvtqi8tziBuviUV8LDK2ddQQUbHdJYB02dgWTK5Olxq";
   };
 
   nix = {
