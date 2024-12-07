@@ -42,6 +42,7 @@ in {
           ...
         }: {
           subnet = "${subnet.prefix}.0/${builtins.toString subnet.prefixLength}";
+          id = lib.toInt (lib.removePrefix "192.168." subnet.prefix);
           option-data = [
             {
               name = "broadcast-address";
