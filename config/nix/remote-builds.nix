@@ -4,7 +4,7 @@
       Host hephaistos.local
         # Prevent using ssh-agent or another keyfile, useful for testing
         IdentitiesOnly yes
-        IdentityFile /root/.ssh/nixremote
+        IdentityFile /etc/ssh/nixremote
         # The weakly privileged user on the remote builder – if not set, 'root' is used – which will hopefully fail
         User nixremote
     '';
