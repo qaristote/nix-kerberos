@@ -12,7 +12,8 @@
       };
     };
   };
-  nix.settings.max-jobs = 1;
+  # disable local builds
+  nix.settings.max-jobs = 0;
   nixpkgs.flake = {
     setNixPath = true;
     setFlakeRegistry = true;
