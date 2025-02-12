@@ -18,8 +18,11 @@
     setNixPath = true;
     setFlakeRegistry = true;
   };
-  system.autoUpgrade.flags = [
-    # for reading secrets from a file
-    "--impure"
-  ];
+  system.autoUpgrade = {
+    flags = [
+      # for reading secrets from a file
+      "--impure"
+    ];
+    dates = "02:00";
+  };
 }
