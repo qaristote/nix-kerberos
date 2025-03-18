@@ -1,4 +1,4 @@
-{lib, ...}: {
+{...}: {
   personal.nix = {
     enable = true;
     autoUpgrade.enable = true;
@@ -19,7 +19,7 @@
     setFlakeRegistry = true;
   };
   system.autoUpgrade = {
-    flags = lib.mkForce [
+    flags = [
       # for reading secrets from a file
       "--impure"
     ];
