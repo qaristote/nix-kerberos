@@ -14,4 +14,6 @@
     allowReboot = true;
     dates = "02:00";
   };
+
+  personal.monitoring.enable = true;
 }
