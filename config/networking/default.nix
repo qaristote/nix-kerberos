@@ -65,6 +65,11 @@ in {
             machines.self.mac = "02:f0:21:b6:11:fc";
             bridges = ["iot"];
           };
+          wlp5s0-iot = {
+            device = "wlp5s0";
+            machines.self.mac = "02:f0:21:b2:61:09";
+            bridges = ["iot"];
+          };
           wlp5s0-guest = {
             device = "wlp5s0";
             machines.self.mac = "06:f0:21:b2:61:09";
@@ -87,7 +92,10 @@ in {
             };
           };
           iot = {
-            interfaces = ["wlp1s0-iot"];
+            interfaces = [
+              "wlp1s0-iot"
+              "wlp5s0-iot"
+            ];
             subnet = {
               prefix = "192.168.3";
               prefixLength = 24;

@@ -22,8 +22,13 @@
       ssid = ssids."${bridge}" + lib.optionalString (radio == "wlp5s0" && bridge != "guest") " (2.4GHz)";
       bssid = ifaces."${iface}".machines.self.mac;
 
-      authentication.mode = "wpa3-sae";
-      authentication.saePasswordsFile = "/etc/hostapd/${bridge}.sae";
+      authentication = let
+        secretsDir = "/etc/hostapd";
+      in {
+        mode = "wpa3-sae";
+        saePasswordsFile = "${secretsDir}/${bridge}.sae";
+        wpaPskFile = "${secretsDir}/${bridge}.psk";
+      };
 
       logLevel = 2; # informational messages
 
@@ -108,10 +113,7 @@ in {
             (perBridgeAC "wan")
             (perBridgeAC "iot")
             {
-              wlp1s0-iot.authentication = {
-                mode = lib.mkForce "wpa3-sae-transition";
-                wpaPskFile = "/etc/hostapd/iot.psk";
-              };
+              wlp1s0-iot.authentication.mode = lib.mkForce "wpa3-sae-transition";
             }
           ];
       };
@@ -128,8 +130,14 @@ in {
         networks = let
           perBridgeN = perBridgeCfg "wlp5s0";
         in
-          (perBridgeN "wan")
-          // (perBridgeN "guest");
+          lib.mkMerge [
+            (perBridgeN "wan")
+            (perBridgeN "guest")
+            (perBridgeN "iot")
+            {
+              wlp5s0-iot.authentication.mode = lib.mkForce "wpa2-sha1";
+            }
+          ];
       };
     };
   };
