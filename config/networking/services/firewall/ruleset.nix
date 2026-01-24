@@ -1,40 +1,51 @@
-{interfaces, ...}: let
+{ interfaces, ... }:
+let
   machines = {
-    inherit
-      (interfaces.all.iot.machines)
+    inherit (interfaces.all.iot.machines)
       sonos-play1
       sonos-move
       ;
-    inherit
-      (interfaces.all.wan.machines)
+    inherit (interfaces.all.wan.machines)
       hephaistos
       ;
   };
-  makeTable = args:
+  makeTable =
+    args:
     {
-      chains = {};
-      flowtables = {};
-      sets = {};
-      maps = {};
-      objects = {};
+      chains = { };
+      flowtables = { };
+      sets = { };
+      maps = { };
+      objects = { };
     }
     // args;
-  makeFlowtable = args:
+  makeFlowtable =
+    args:
     {
       hook = "ingress";
       priority = "filter";
-      devices = [];
+      devices = [ ];
       offload = false;
     }
     // args;
-  makeBaseChain = type: hook: {
-    priority ? type,
-    policy ? "drop",
-    rules ? "",
-  }: {
-    base = {inherit type hook priority policy;};
-    inherit rules;
-  };
+  makeBaseChain =
+    type: hook:
+    {
+      priority ? type,
+      policy ? "drop",
+      rules ? "",
+    }:
+    {
+      base = {
+        inherit
+          type
+          hook
+          priority
+          policy
+          ;
+      };
+      inherit rules;
+    };
   rulesCommon = {
     conntrack = ''
       ct state vmap { established : accept \
@@ -54,6 +65,11 @@
         th sport 53            \
         th dport 53            \
         accept comment dns
+    '';
+    http = ''
+      ip protocol tcp         \
+        tcp dport { 80, 443 } \
+        accept comment http
     '';
     igmp = ''
       ip protocol igmp accept comment "igmp"
@@ -112,7 +128,8 @@
         accept comment "syncthing: discovery broadcast"
     '';
   };
-in {
+in
+{
   ip = {
     filter = makeTable {
       flowtables = {
@@ -126,7 +143,8 @@ in {
         guest_in.rules = with rulesCommon; dns + dhcp;
         enp3s0_in.rules = with rulesCommon; dns + dhcp;
         input = makeBaseChain "filter" "input" {
-          rules = with rulesCommon;
+          rules =
+            with rulesCommon;
             conntrack
             + ping
             + ''
@@ -146,7 +164,8 @@ in {
           ip daddr != { 192.168.0.0-192.168.255.255, 172.16.0.0-172.31.255.255 } accept
         '';
         forward = makeBaseChain "filter" "forward" {
-          rules = with rulesCommon;
+          rules =
+            with rulesCommon;
             ''
               ip protocol { udp, tcp } flow add @default
             ''
@@ -179,8 +198,8 @@ in {
   ip6 = {
     global6 = makeTable {
       chains = {
-        input = makeBaseChain "filter" "input" {};
-        forward = makeBaseChain "filter" "forward" {};
+        input = makeBaseChain "filter" "input" { };
+        forward = makeBaseChain "filter" "forward" { };
       };
     };
   };
@@ -188,7 +207,8 @@ in {
   bridge = {
     filter = makeTable {
       chains = {
-        iot_iot.rules = with rulesCommon;
+        iot_iot.rules =
+          with rulesCommon;
           ''
             ip saddr { ${machines.sonos-move.ip}  \
                      , ${machines.sonos-play1.ip} } \
@@ -199,15 +219,21 @@ in {
           + ssdp
           + sonos.player-controller
           + sonos.controller-player;
-        wan_wan.rules = with rulesCommon;
+        wan_wan.rules =
+          with rulesCommon;
           syncthing
           + kdeconnect
           + ''
             ip daddr ${machines.hephaistos.ip} \
               ${ssh}
+          ''
+          + ''
+            ip daddr ${machines.hephaistos.ip} \
+              ${http}
           '';
         forward = makeBaseChain "filter" "forward" {
-          rules = with rulesCommon;
+          rules =
+            with rulesCommon;
             conntrack
             + ''
               ether type vmap { ip6 : drop, arp : accept }
@@ -247,4 +273,3 @@ in {
 #     udp dport { 3478, 4379, 4380, 27014-27030 } \
 #     accept comment "steam: p2p, voice chat"
 # }
-
